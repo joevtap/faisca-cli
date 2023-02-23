@@ -1,0 +1,3 @@
+[submodule "gosls"]
+	path = gosls
+	url = https://github.com/joevtap/go-serverless

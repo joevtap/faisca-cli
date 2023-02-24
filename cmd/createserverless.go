@@ -2,72 +2,53 @@ package cmd
 
 import (
 	"fmt"
-	"regexp"
 
-	"github.com/manifoldco/promptui"
+	"github.com/joevtap/faisca-cli/utils/prompt"
 	"github.com/spf13/cobra"
 )
 
 var (
-	use            string
-	template       string
-	availableLangs = []string{"go"}
+	language string
+	name     string
 )
 
 var createServerlessCmd = &cobra.Command{
 	Use:     "serverless [project-name]",
 	Short:   "Create a new project using the Serverless Framework",
-	Args:    cobra.MaximumNArgs(1),
 	Aliases: []string{"sls"},
+	Args:    cobra.MaximumNArgs(1),
 	Run:     createServerlessCmdImpl,
 }
 
 func createServerlessCmdImpl(cmd *cobra.Command, args []string) {
 	var err error
-	var name string
 
 	if len(args) != 0 {
 		name = args[0]
-	} else {
-		name, err = namePrompt.Run()
+	}
+
+	if name == "" {
+		name, err = prompt.Name.Run()
 		if err != nil {
 			fmt.Printf("Prompt failed %v \n", err)
+			return
 		}
 	}
 
-	languagePrompt.Run()
+	if language == "" {
+		_, language, err = prompt.Language.Run([]string{"go", "typescript"})
+		if err != nil {
+			fmt.Printf("Prompt failed %v \n", err)
+			return
+		}
+	}
+
 	fmt.Printf("Project name: %v\n", name)
+	fmt.Printf("Language: %v\n", language)
 }
 
 func init() {
-	createServerlessCmd.Flags().StringVarP(&use, "use", "u", "", "Use a language or framework")
-	createServerlessCmd.Flags().StringVarP(&template, "template", "t", "", "Use a specific template (git repo)")
+	createServerlessCmd.Flags().StringVarP(&language, "lang", "l", "", "Language to use for the project")
+	createServerlessCmd.Flags().StringVarP(&name, "name", "", "", "Name of the project")
 	createCmd.AddCommand(createServerlessCmd)
-}
-
-var namePrompt = promptui.Prompt{
-	Label:   "Give your project a name",
-	Default: "my-project",
-	Validate: func(input string) error {
-		if len(input) < 3 {
-			return fmt.Errorf("project name must be at least 3 characters")
-		}
-
-		if !regexp.MustCompile(`^[a-zA-Z0-9_-]+$`).MatchString(input) {
-			return fmt.Errorf("project name must be alphanumeric")
-		}
-
-		return nil
-	},
-}
-
-var languagePrompt = promptui.Select{
-	Label:    "Select a language",
-	Items:    availableLangs,
-	HideHelp: true,
-	Templates: &promptui.SelectTemplates{
-		Active:   "🤔 {{ . | cyan }}",
-		Inactive: "   {{ . | cyan }}",
-		Selected: "😄 {{ . | green }}",
-	},
 }

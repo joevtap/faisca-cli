@@ -1,25 +1,17 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
 	"os"
 
-	"github.com/joevtap/go-serverless/gosls"
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "faisca-cli",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:   "faisca",
+	Short: "A polyglot project starter and manager",
+	Long: `faisca is a polyglot project starter and manager. It is a CLI tool that
+allows you to create new projects from templates, and manage existing projects.
+`, // + "It is designed to be extensible, so that you can add your own templates and commands."
 }
 
 func Execute() {
@@ -27,8 +19,4 @@ func Execute() {
 	if err != nil {
 		os.Exit(1)
 	}
-}
-
-func init() {
-	rootCmd.AddCommand(gosls.HelloWorldCommand)
 }

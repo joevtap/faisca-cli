@@ -33,6 +33,10 @@ func createServerlessCmdImpl(cmd *cobra.Command, args []string) {
 			fmt.Printf("Prompt failed %v \n", err)
 			return
 		}
+
+		if name == "" {
+			name = "my-project"
+		}
 	}
 
 	if language == "" {

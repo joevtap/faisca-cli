@@ -1,73 +1,66 @@
 package scaffolder
 
 import (
-	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"text/template"
+
+	"gopkg.in/yaml.v3"
 )
 
-type Tree map[string]Dir
-
 type Dir struct {
-	Dirs  map[string]interface{}
-	Files []File
+	Dirs  map[string]Dir `yaml:"dirs"`
+	Files []File         `yaml:"files"`
 }
 
 type File struct {
-	Name    string
-	Content *template.Template
-	Data    interface{}
+	Name    string `yaml:"name"`
+	Content string `yaml:"content,omitempty"`
 }
 
-func (t Tree) Scaffold() error {
-	for key, value := range t {
-		dirPath := filepath.Join(".", key)
+func Scaffold(yamlFilePath, outputDirPath string, data map[string]string) error {
+	var dir Dir
 
-		err := os.MkdirAll(dirPath, 0755)
-		if err != nil {
-			return err
-		}
-		err = value.Scaffold(dirPath)
-		if err != nil {
-			return err
-		}
+	yamlData, err := os.ReadFile(yamlFilePath)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	return nil
+	err = yaml.Unmarshal(yamlData, &dir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return dir.Scaffold(outputDirPath, data)
 }
 
-func (d Dir) Scaffold(parentDirPath string) error {
-	for key, value := range d.Dirs {
+func (d Dir) Scaffold(parentDirPath string, data map[string]string) error {
+	for key, subDir := range d.Dirs {
 		subDirPath := filepath.Join(parentDirPath, key)
-
-		subDir, ok := interface{}(value).(Dir)
-		if !ok {
-			return fmt.Errorf("%v is not a directory", value)
-		}
 
 		err := os.MkdirAll(subDirPath, 0755)
 		if err != nil {
-			return err
+			log.Println(err)
 		}
 
-		err = subDir.Scaffold(subDirPath)
+		err = subDir.Scaffold(subDirPath, data)
 		if err != nil {
-			return err
+			log.Fatal(err)
 		}
 	}
 
-	err := createFiles(d.Files, parentDirPath)
+	err := createFiles(d.Files, parentDirPath, data)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 
 	return nil
 }
 
-func createFiles(files []File, parentDirPath string) error {
+func createFiles(files []File, parentDirPath string, data map[string]string) error {
 	for _, file := range files {
-		err := createFile(file, parentDirPath)
+		err := createFile(file, parentDirPath, data)
 		if err != nil {
 			return err
 		}
@@ -76,9 +69,8 @@ func createFiles(files []File, parentDirPath string) error {
 	return nil
 }
 
-func createFile(file File, parentDirPath string) error {
-
-	filePath := filepath.Join(".", parentDirPath, file.Name)
+func createFile(file File, parentDirPath string, data map[string]string) error {
+	filePath := filepath.Join(parentDirPath, file.Name)
 
 	err := os.MkdirAll(filepath.Dir(filePath), 0755)
 	if err != nil {
@@ -92,17 +84,18 @@ func createFile(file File, parentDirPath string) error {
 
 	defer newFile.Close()
 
-	if file.Content == nil {
+	if file.Content == "" {
 		return nil
 	}
 
-	if file.Data == nil {
-		return nil
-	}
-
-	err = file.Content.Execute(newFile, file.Data)
+	tmpl, err := template.New(file.Name).Parse(file.Content)
 	if err != nil {
-		return err
+		log.Println(err)
+	}
+
+	err = tmpl.Execute(newFile, data)
+	if err != nil {
+		log.Println(err)
 	}
 
 	return nil

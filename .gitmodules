@@ -1,3 +1,6 @@
 [submodule "lib/gosls"]
 	path = lib/gosls
 	url = git@github.com:joevtap/go-serverless.git
+[submodule "lib/scaffolder"]
+	path = lib/scaffolder
+	url = git@github.com:joevtap/scaffolder.git
